@@ -1,0 +1,48 @@
+@using Shared;
+@inject IOrderEventService _orderEventService;
+
+<MudDialog >
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            Order stock
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudText Class="py-1">ISIN: @Product.Isin</MudText>
+        <MudText Class="py-1">Title: @Product.Title</MudText>
+        <MudNumericField @bind-Value="Amount" Label="Amount" Variant="Variant.Text" Min="1" />
+        <MudText Class="py-1">Price: @Price</MudText>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Primary" OnClick="SubmitOrderAsync">Submit order</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] 
+    public MudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter] 
+    public Product Product { get; set; } = default!;
+
+    public decimal Price => (Product?.Price ?? 0) * Amount;
+
+    public int Amount { get; set; } = 1;
+
+    private void Cancel()
+    {
+        MudDialog.Cancel();
+    }
+
+    private async Task SubmitOrderAsync()
+    {
+        var order = new Order();
+        order.Id = Guid.NewGuid();
+        order.Amount = Amount;
+        order.Product = Product;
+
+        await _orderEventService.PublishOrderAsync(order);
+        MudDialog.Close();
+    }
+}

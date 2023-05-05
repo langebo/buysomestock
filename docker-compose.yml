@@ -1,0 +1,57 @@
+version: "3.7"
+services:
+  mssql:
+    image: 'mcr.microsoft.com/mssql/server:2022-latest'
+    environment:
+      SA_PASSWORD: 'MlSi1f7eciR0Ga7UffQo'
+      ACCEPT_EULA: 'Y'
+    ports:
+      - '1433:1433'
+  rabbitmq:
+    image: masstransit/rabbitmq
+    ports:
+      - 15672:15672
+      - 5672:5672
+  mailhog:
+    image: mailhog/mailhog
+    ports:
+      - 1025:1025
+      - 8025:8025
+
+  prometheus:
+    image: prom/prometheus:latest
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:z
+    ports:
+      - 9090:9090
+  grafana:
+    image: grafana/grafana:latest
+    volumes:
+      - ./grafana-defaults.ini:/etc/grafana/grafana.ini:z
+      - ./grafana-datasource.yml:/etc/grafana/provisioning/datasources/datasource.yaml:z
+    ports:
+      - 3000:3000
+    links:
+      - prometheus
+  zipkin:
+    image: openzipkin/zipkin:latest
+    ports:
+      - 9411:9411
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:latest
+    command: [ "--config=/etc/otel-collector-config.yml" ]
+    volumes:
+      - ./otel-collector-config.yml:/etc/otel-collector-config.yml:z
+    ports:
+      - 8888:8888 # Prometheus metrics exposed by the collector
+      - 8889:8889 # Prometheus exporter metrics
+      - 4317:4317 # OTLP gRPC receiver
+    links:
+      - zipkin
+  loki:
+    image: grafana/loki:latest
+    ports:
+      - 3100:3100
+      - 7946:7946
+      - 9095:7946
+  

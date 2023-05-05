@@ -1,0 +1,45 @@
+﻿@page "/"
+@using Shared
+@using Components;
+@inject IProductsClient _productsClient
+@inject IDialogService _dialogService
+
+<MudText Typo="Typo.h2">BuySomeStocks</MudText>
+
+<MudTable Items="@_products" Hover="true" Breakpoint="Breakpoint.Sm" Loading="@_loading" LoadingProgressColor="Color.Info" T="Product" OnRowClick="OnRowClicked">
+    <HeaderContent>
+        <MudTh>ISIN</MudTh>
+        <MudTh>Title</MudTh>
+        <MudTh>Price</MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd DataLabel="Isin">@context.Isin</MudTd>
+        <MudTd DataLabel="Title">@context.Title</MudTd>
+        <MudTd DataLabel="Price">@context.Price</MudTd>
+    </RowTemplate>
+</MudTable>
+
+@code {
+    private bool _loading = false;
+    private IEnumerable<Product> _products = Enumerable.Empty<Product>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        _loading = true;
+        try
+        {
+            _products = await _productsClient.GetProductsAsync();
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private async Task OnRowClicked(TableRowClickEventArgs<Product> args)
+    {
+        var parameters = new DialogParameters();
+        parameters.Add("Product", args.Item);
+        await _dialogService.ShowAsync<OrderDialog>("Order stock", parameters);
+    }
+}
